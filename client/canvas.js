@@ -132,6 +132,7 @@ function startDraw(x, y) {
 
   // Draw dot immediately
   drawOp({ tool, color, width: size, points: [[x, y]] });
+  console.log(`🖌️ Drawing started: ${localId.slice(0, 8)} at (${x}, ${y})`);
 }
 
 function moveDraw(x, y) {
@@ -184,9 +185,13 @@ canvas.addEventListener("pointermove", (e) => {
 canvas.addEventListener("pointerup", (e) => {
   canvas.releasePointerCapture(e.pointerId);
   endDraw();
+  console.log("✅ Stroke ended (pointerup)");
 });
 
-canvas.addEventListener("pointercancel", endDraw);
+canvas.addEventListener("pointercancel", () => {
+  endDraw();
+  console.log("⚠️ Stroke cancelled");
+});
 
 //
 // 🟢 WebSocket event handlers
