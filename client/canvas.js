@@ -23,8 +23,19 @@ let lastEmit = 0;
 const EMIT_INTERVAL = 16; // ~60fps
 const TOOLBAR_HEIGHT = 48;
 
-const cursors = {}; // userId -> {x, y, color, name}
+const cursors = {}; // userId -> {x, y, color, name, lastUpdate}
 let history = []; // all operations
+
+// Clean up stale cursors every 3 seconds
+setInterval(() => {
+  const now = Date.now();
+  for (const id in cursors) {
+    if (now - cursors[id].lastUpdate > 5000) {
+      console.log(`🧹 Removing stale cursor: ${id}`);
+      delete cursors[id];
+    }
+  }
+}, 3000);
 
 // Resize handler
 window.addEventListener("resize", () => {
@@ -87,12 +98,17 @@ function redrawAll() {
 // 🟢 Draw other users' cursors (on separate layer)
 //
 function renderCursors() {
-  // Clear cursor layer
+  // Clear cursor layer completely
   cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
   
   for (const id in cursors) {
     const c = cursors[id];
-    if (!c) continue;
+    if (!c || !c.x || !c.y) continue;
+    
+    // Only draw if cursor is within canvas bounds
+    if (c.x < 0 || c.x > cursorCanvas.width || c.y < 0 || c.y > cursorCanvas.height) {
+      continue;
+    }
     
     // Draw cursor circle
     cursorCtx.beginPath();
@@ -103,13 +119,18 @@ function renderCursors() {
     cursorCtx.lineWidth = 2;
     cursorCtx.stroke();
     
-    // Draw name label
-    cursorCtx.font = "bold 12px Arial";
+    // Draw name label (offset so it doesn't overlap cursor)
+    cursorCtx.font = "bold 11px Arial";
     cursorCtx.fillStyle = c.color || "#000";
     cursorCtx.strokeStyle = "white";
     cursorCtx.lineWidth = 3;
-    cursorCtx.strokeText(c.name || "User", c.x + 10, c.y - 10);
-    cursorCtx.fillText(c.name || "User", c.x + 10, c.y - 10);
+    cursorCtx.textAlign = "left";
+    cursorCtx.lineJoin = "round";
+    
+    const labelX = c.x + 12;
+    const labelY = c.y - 8;
+    cursorCtx.strokeText(c.name || "User", labelX, labelY);
+    cursorCtx.fillText(c.name || "User", labelX, labelY);
   }
 }
 
@@ -132,6 +153,7 @@ function startDraw(x, y) {
 
   // Draw dot immediately
   drawOp({ tool, color, width: size, points: [[x, y]] });
+  console.log(`🖌️ Drawing started: ${localId.slice(0, 8)} at (${x}, ${y})`);
 }
 
 function moveDraw(x, y) {
@@ -163,7 +185,12 @@ function moveDraw(x, y) {
 function endDraw() {
   if (!drawing) return;
   drawing = false;
-  socket.emit("op:end", { localId });
+  
+  if (localId) {
+    socket.emit("op:end", { localId });
+    console.log(`✏️ Drawing ended: ${localId.slice(0, 8)} with ${localPoints.length} points`);
+  }
+  
   localId = null;
   localPoints = [];
 }
@@ -184,9 +211,13 @@ canvas.addEventListener("pointermove", (e) => {
 canvas.addEventListener("pointerup", (e) => {
   canvas.releasePointerCapture(e.pointerId);
   endDraw();
+  console.log("✅ Stroke ended (pointerup)");
 });
 
-canvas.addEventListener("pointercancel", endDraw);
+canvas.addEventListener("pointercancel", () => {
+  endDraw();
+  console.log("⚠️ Stroke cancelled");
+});
 
 //
 // 🟢 WebSocket event handlers
@@ -232,7 +263,7 @@ socket.on("op:toggle", (toggled) => {
 });
 
 socket.on("cursor", ({ x, y, userId, color, name }) => {
-  cursors[userId] = { x, y, color, name };
+  cursors[userId] = { x, y, color, name, lastUpdate: Date.now() };
 });
 
 socket.on("disconnect", () => {
