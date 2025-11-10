@@ -4,8 +4,13 @@ import { socket } from "./websocket.js";
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 
+const cursorCanvas = document.getElementById("cursor-layer");
+const cursorCtx = cursorCanvas.getContext("2d");
+
 let width = (canvas.width = window.innerWidth);
 let height = (canvas.height = window.innerHeight - 48);
+cursorCanvas.width = window.innerWidth;
+cursorCanvas.height = window.innerHeight - 48;
 
 let drawing = false;
 let tool = "brush";
@@ -201,10 +206,19 @@ socket.on("op:apply", (op) => {
 });
 
 socket.on("op:toggle", (toggled) => {
-  const target = history.find((o) => o.opId === toggled.opId);
+  if (!toggled || !toggled.opId) {
+    console.warn("⚠️ Invalid toggle data:", toggled);
+    return;
+  }
+  
+  const target = history.find((o) => o && o.opId === toggled.opId);
   if (target) {
+    const prevState = target.active;
     target.active = toggled.active;
+    console.log(`📐 Toggle op ${toggled.opId.slice(0, 8)}: ${prevState} → ${toggled.active}`);
     redrawAll();
+  } else {
+    console.warn("⚠️ Toggle target not found:", toggled.opId);
   }
 });
 
