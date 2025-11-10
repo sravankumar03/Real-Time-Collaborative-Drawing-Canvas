@@ -77,11 +77,15 @@ io.on("connection", (socket) => {
 
     socket.on("op:end", (end) => {
       try {
-        if (!end || !end.localId) return;
+        if (!end || !end.localId) {
+          console.warn("❌ Invalid op:end data:", end);
+          return;
+        }
         end.author = socket.id;
-        state.receiveEnd(end, (applied) => {
+        const result = state.receiveEnd(end, (applied) => {
           if (applied) {
             io.to(roomId).emit("op:apply", applied);
+            console.log(`✅ Op finalized: ${applied.opId.slice(0, 8)} with ${applied.points.length} points`);
           }
         });
       } catch (err) {
@@ -111,9 +115,12 @@ io.on("connection", (socket) => {
       try {
         const toggled = state.undo();
         if (toggled) {
+          // Broadcast to ALL clients in room (including sender)
           io.to(roomId).emit("op:toggle", toggled);
+          console.log(`↶ Undo in ${roomId}`);
           if (typeof callback === "function") callback(true);
         } else {
+          console.log(`⚠️ Nothing to undo in ${roomId}`);
           if (typeof callback === "function") callback(false);
         }
       } catch (err) {
@@ -126,9 +133,12 @@ io.on("connection", (socket) => {
       try {
         const toggled = state.redo();
         if (toggled) {
+          // Broadcast to ALL clients in room (including sender)
           io.to(roomId).emit("op:toggle", toggled);
+          console.log(`↷ Redo in ${roomId}`);
           if (typeof callback === "function") callback(true);
         } else {
+          console.log(`⚠️ Nothing to redo in ${roomId}`);
           if (typeof callback === "function") callback(false);
         }
       } catch (err) {
