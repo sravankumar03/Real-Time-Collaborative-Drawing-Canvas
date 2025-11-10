@@ -88,4 +88,19 @@ button.active {
   touch-action: none;
   cursor: crosshair;
   background: white;
+  position: absolute;
+  top: 48px;
+  left: 0;
+}
+
+#cursor-layer {
+  display: block;
+  width: 100%;
+  height: calc(100% - 48px);
+  touch-action: none;
+  cursor: crosshair;
+  position: absolute;
+  top: 48px;
+  left: 0;
+  pointer-events: none;
 }
