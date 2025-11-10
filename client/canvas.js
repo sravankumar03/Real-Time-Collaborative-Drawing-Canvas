@@ -84,23 +84,32 @@ function redrawAll() {
 }
 
 //
-// 🟢 Draw other users' cursors (with simple layer management)
+// 🟢 Draw other users' cursors (on separate layer)
 //
 function renderCursors() {
-  // Clear only the cursor area by redrawing everything, then cursors
-  // For better performance with many users, consider a separate canvas layer
+  // Clear cursor layer
+  cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
+  
   for (const id in cursors) {
     const c = cursors[id];
     if (!c) continue;
     
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = c.color || "#000";
-    ctx.fill();
+    // Draw cursor circle
+    cursorCtx.beginPath();
+    cursorCtx.arc(c.x, c.y, 5, 0, Math.PI * 2);
+    cursorCtx.fillStyle = c.color || "#000";
+    cursorCtx.fill();
+    cursorCtx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+    cursorCtx.lineWidth = 2;
+    cursorCtx.stroke();
     
-    ctx.font = "12px Arial";
-    ctx.fillStyle = c.color || "#000";
-    ctx.fillText(c.name || "User", c.x + 8, c.y - 8);
+    // Draw name label
+    cursorCtx.font = "bold 12px Arial";
+    cursorCtx.fillStyle = c.color || "#000";
+    cursorCtx.strokeStyle = "white";
+    cursorCtx.lineWidth = 3;
+    cursorCtx.strokeText(c.name || "User", c.x + 10, c.y - 10);
+    cursorCtx.fillText(c.name || "User", c.x + 10, c.y - 10);
   }
 }
 
