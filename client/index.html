@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collaborative Canvas</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="toolbar">
+    <input type="color" id="color" value="#000000" title="Brush color">
+    <div class="size-control">
+      <input type="range" id="size" min="1" max="50" value="4" title="Brush size">
+      <span id="size-display" class="size-value">4</span>
+    </div>
+    <button id="brush" class="tool-btn active">Brush</button>
+    <button id="eraser" class="tool-btn">Eraser</button>
+    <button id="undo" title="Undo (Ctrl+Z)">Undo</button>
+    <button id="redo" title="Redo (Ctrl+Y)">Redo</button>
+    <span id="users" class="user-list"></span>
+  </div>
+
+  <canvas id="board"></canvas>
+
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script type="module" src="websocket.js"></script>
+  <script type="module" src="canvas.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
